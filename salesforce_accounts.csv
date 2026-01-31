@@ -1,0 +1,151 @@
+account_id,company_name,region,industry,company_size,arr_value,contract_start_date,renewal_date,account_owner,account_tier,payment_status
+ACC-00001,Red Peak,EMEA,Energy,Enterprise,853657,2024-04-06,2026-04-06,Sarah Garcia,Premium,Current
+ACC-00002,Blue Bridge,APAC,Retail,SMB,44350,2024-02-27,2026-02-26,Jessica Miller,Standard,Current
+ACC-00003,Alpha Digital,AMER,Manufacturing,SMB,19019,2025-09-04,2027-09-04,Chris Jones,Premium,Overdue
+ACC-00004,Beta Systems,AMER,Healthcare,SMB,35785,2025-11-23,2026-11-23,Sarah Brown,Standard,Current
+ACC-00005,Elite Tech,EMEA,Technology,SMB,38852,2024-06-01,2027-06-01,Jessica Garcia,Enterprise,Current
+ACC-00006,ApexTechnologies,AMER,Finance,SMB,47652,2024-08-31,2026-08-31,Sarah Garcia,Standard,Current
+ACC-00007,Prime Solutions,EMEA,Finance,Mid-Market,176274,2025-04-18,2027-04-18,Jessica Johnson,Standard,Current
+ACC-00008,Silver Stone,APAC,Energy,Mid-Market,128459,2025-07-24,2026-07-24,David Miller,Premium,Current
+ACC-00009,Nova Tech,EMEA,Technology,Mid-Market,184950,2024-03-06,2026-03-06,Amanda Davis,Standard,Current
+ACC-00010,Silver Point,EMEA,Education,SMB,34024,2024-03-27,2027-03-27,Amanda Garcia,Enterprise,Current
+ACC-00011,Golden Stream,EMEA,Retail,SMB,19874,2025-11-18,2028-11-17,Emily Davis,Premium,Current
+ACC-00012,Cloud AI,AMER,Retail,Enterprise,801922,2024-10-18,2027-10-18,Chris Garcia,Premium,Current
+ACC-00013,CloudSoftware,APAC,Logistics,Enterprise,473665,2025-06-27,2028-06-26,Jessica Johnson,Premium,Current
+ACC-00014,Iron Stone,EMEA,Finance,Mid-Market,122953,2025-01-13,2027-01-13,Amanda Johnson,Premium,Current
+ACC-00015,Neural Solutions,APAC,Education,SMB,27099,2025-11-22,2027-11-22,Amanda Williams,Standard,Current
+ACC-00016,SmartSolutions,AMER,Healthcare,SMB,36523,2025-04-29,2026-04-29,Jessica Garcia,Premium,Current
+ACC-00017,Green Gate LLC,APAC,Logistics,Enterprise,945694,2024-12-12,2026-12-12,John Johnson,Premium,Current
+ACC-00018,Digital Software,AMER,Energy,SMB,17412,2025-10-13,2026-10-13,David Jones,Enterprise,Current
+ACC-00019,CyberLabs,APAC,Technology,SMB,49469,2024-03-21,2026-03-21,Jessica Davis,Enterprise,Current
+ACC-00020,Alpha Solutions,AMER,Energy,Mid-Market,109850,2025-01-28,2027-01-28,Amanda Williams,Standard,Current
+ACC-00021,Titan Bridge,AMER,Healthcare,SMB,33808,2025-09-19,2027-09-19,Chris Garcia,Standard,Overdue
+ACC-00022,Iron Stream,AMER,Media,Mid-Market,54927,2025-06-07,2027-06-07,Chris Smith,Standard,Current
+ACC-00023,Tech Software,AMER,Manufacturing,SMB,42317,2024-02-10,2026-02-09,David Miller,Premium,At Risk
+ACC-00024,NeuralAnalytics,APAC,Technology,SMB,34505,2024-12-26,2027-12-26,Jessica Smith,Standard,Current
+ACC-00025,Data Systems,AMER,Logistics,SMB,29937,2025-01-19,2027-01-19,John Miller,Premium,Current
+ACC-00026,MetaAnalytics,AMER,Education,Mid-Market,129147,2024-07-19,2026-07-19,David Williams,Premium,Current
+ACC-00027,Quantum Inc,AMER,Healthcare,SMB,17642,2024-02-29,2026-02-28,Sarah Williams,Standard,Current
+ACC-00028,DigitalCorp,EMEA,Finance,SMB,40059,2024-12-19,2026-12-19,Chris Smith,Standard,Current
+ACC-00029,ApexAnalytics,AMER,Technology,SMB,18643,2025-04-08,2026-04-08,Emily Johnson,Premium,Current
+ACC-00030,ApexLabs,APAC,Retail,Mid-Market,198309,2025-02-18,2027-02-18,Michael Garcia,Enterprise,Current
+ACC-00031,Apex AI,AMER,Media,SMB,26339,2025-11-26,2027-11-26,David Miller,Premium,Current
+ACC-00032,Red Wave,APAC,Manufacturing,Enterprise,714340,2025-09-12,2027-09-12,Sarah Williams,Standard,Current
+ACC-00033,Elite Digital,AMER,Energy,SMB,35660,2024-11-02,2026-11-02,Chris Garcia,Standard,Current
+ACC-00034,Gamma Systems,APAC,Logistics,Enterprise,810884,2025-02-26,2026-02-26,David Davis,Enterprise,Current
+ACC-00035,Beta Group,EMEA,Healthcare,SMB,31967,2025-05-08,2027-05-08,John Williams,Premium,Current
+ACC-00036,ApexCorp,EMEA,Healthcare,SMB,44222,2025-11-29,2027-11-29,David Miller,Standard,Current
+ACC-00037,Digital Systems,AMER,Technology,Enterprise,294200,2024-12-12,2026-12-12,David Jones,Standard,Current
+ACC-00038,QuantumAI,AMER,Education,Mid-Market,65986,2024-12-26,2026-12-26,Michael Johnson,Premium,Current
+ACC-00039,Stellar Digital,AMER,Real Estate,Mid-Market,124141,2024-10-28,2026-10-28,Sarah Williams,Standard,Current
+ACC-00040,Cyber Corp,AMER,Manufacturing,Enterprise,347496,2025-02-14,2028-02-14,Chris Miller,Premium,Current
+ACC-00041,Gamma Solutions,EMEA,Logistics,Enterprise,777226,2025-04-20,2027-04-20,John Jones,Enterprise,Current
+ACC-00042,Prime Digital,EMEA,Technology,SMB,16091,2025-07-08,2028-07-07,Jessica Davis,Standard,Current
+ACC-00043,Elite Solutions LLC,AMER,Technology,SMB,41981,2024-07-20,2026-07-20,Michael Jones,Standard,Current
+ACC-00044,Crystal Path,EMEA,Finance,Mid-Market,118952,2025-07-25,2027-07-25,Chris Brown,Standard,Current
+ACC-00045,Golden Wave,EMEA,Technology,SMB,18205,2025-11-16,2027-11-16,John Williams,Standard,Current
+ACC-00046,Nova Systems,EMEA,Education,Enterprise,785779,2024-02-11,2026-02-10,John Davis,Premium,At Risk
+ACC-00047,Neural Inc,AMER,Real Estate,Enterprise,717331,2024-05-11,2026-05-11,Emily Davis,Standard,Current
+ACC-00048,CyberSoftware,AMER,Manufacturing,Enterprise,344460,2025-09-08,2027-09-08,John Garcia,Premium,Current
+ACC-00049,Crystal Point,EMEA,Retail,SMB,29761,2024-08-13,2026-08-13,David Johnson,Premium,Current
+ACC-00050,QuantumCorp,EMEA,Healthcare,Mid-Market,55551,2025-06-27,2028-06-26,Jessica Jones,Enterprise,Current
+ACC-00051,Iron Point LLC,APAC,Retail,SMB,29156,2025-10-25,2028-10-24,Emily Williams,Premium,Current
+ACC-00052,Data Software,AMER,Finance,Mid-Market,182896,2024-10-03,2026-10-03,David Brown,Enterprise,Current
+ACC-00053,Silver Gate LLC,AMER,Retail,Enterprise,623149,2024-10-13,2027-10-13,John Brown,Standard,Current
+ACC-00054,DigitalAnalytics,AMER,Energy,SMB,31792,2025-03-06,2028-03-05,Emily Brown,Standard,Current
+ACC-00055,Red Stream,AMER,Healthcare,Mid-Market,50501,2024-09-30,2026-09-30,Chris Smith,Standard,Current
+ACC-00056,SmartAI,AMER,Logistics,SMB,15625,2024-04-27,2027-04-27,David Garcia,Standard,At Risk
+ACC-00057,Quantum Systems,APAC,Logistics,Mid-Market,88847,2024-11-18,2026-11-18,Chris Williams,Standard,Current
+ACC-00058,Iron Path,EMEA,Manufacturing,SMB,49690,2024-05-11,2026-05-11,John Johnson,Premium,Current
+ACC-00059,CloudAnalytics,APAC,Manufacturing,SMB,28443,2024-07-15,2027-07-15,Jessica Miller,Standard,At Risk
+ACC-00060,Quantum Solutions,AMER,Healthcare,Enterprise,942201,2024-05-09,2027-05-09,Chris Miller,Standard,At Risk
+ACC-00061,Golden Peak,EMEA,Energy,Enterprise,570704,2025-08-05,2026-08-05,Amanda Johnson,Enterprise,Current
+ACC-00062,Tech Technologies,APAC,Energy,SMB,28690,2024-03-08,2026-03-08,Emily Garcia,Enterprise,Current
+ACC-00063,Apex Solutions,AMER,Education,SMB,47605,2024-11-03,2027-11-03,John Davis,Standard,Current
+ACC-00064,Global Group,APAC,Technology,SMB,17836,2025-01-21,2027-01-21,Chris Garcia,Standard,Current
+ACC-00065,DataHub,EMEA,Technology,Mid-Market,185977,2025-01-14,2027-01-14,Emily Williams,Enterprise,Current
+ACC-00066,Blue Path,AMER,Energy,Mid-Market,177587,2024-05-11,2026-05-11,Emily Miller,Enterprise,Current
+ACC-00067,Titan Peak,APAC,Energy,Mid-Market,78383,2025-07-23,2028-07-22,Sarah Johnson,Standard,Current
+ACC-00068,Golden Point,AMER,Retail,SMB,26729,2024-02-02,2027-02-01,Emily Jones,Premium,Current
+ACC-00069,Digital Technologies,AMER,Energy,SMB,21759,2024-06-26,2026-06-26,Emily Williams,Premium,Current
+ACC-00070,Apex Software,EMEA,Real Estate,Mid-Market,130997,2025-01-11,2028-01-11,David Brown,Standard,Current
+ACC-00071,Smart Inc,EMEA,Retail,SMB,21282,2025-10-27,2026-10-27,David Jones,Premium,Current
+ACC-00072,Titan Point,EMEA,Education,SMB,39786,2024-10-28,2026-10-28,John Jones,Premium,Current
+ACC-00073,Golden Path,AMER,Media,Enterprise,978791,2025-02-21,2028-02-21,Michael Jones,Standard,Current
+ACC-00074,Elite Solutions,AMER,Healthcare,SMB,43657,2024-08-31,2026-08-31,Emily Jones,Standard,At Risk
+ACC-00075,Cyber Labs,EMEA,Retail,SMB,30798,2025-10-25,2028-10-24,John Williams,Premium,Current
+ACC-00076,Digital Hub,APAC,Manufacturing,SMB,19596,2024-11-16,2026-11-16,Emily Williams,Premium,Current
+ACC-00077,Blue Gate Group,APAC,Healthcare,SMB,49439,2025-03-21,2027-03-21,David Smith,Standard,Current
+ACC-00078,Apex Systems Inc,APAC,Energy,Mid-Market,105278,2025-03-07,2028-03-06,Sarah Johnson,Enterprise,Current
+ACC-00079,Iron Point,EMEA,Manufacturing,Mid-Market,176717,2025-05-18,2028-05-17,Sarah Jones,Enterprise,At Risk
+ACC-00080,Meta Inc,AMER,Retail,SMB,31173,2025-05-11,2028-05-10,Michael Miller,Standard,Current
+ACC-00081,CyberInc,EMEA,Logistics,SMB,17247,2024-07-20,2026-07-20,Sarah Davis,Standard,Current
+ACC-00082,Omega Tech,EMEA,Education,SMB,17535,2025-01-17,2027-01-17,Jessica Jones,Standard,Current
+ACC-00083,Cyber Inc,EMEA,Logistics,Enterprise,823880,2024-11-06,2027-11-06,Chris Brown,Standard,Current
+ACC-00084,Golden Gate,AMER,Technology,Mid-Market,52755,2025-01-27,2027-01-27,Amanda Jones,Premium,Current
+ACC-00085,DataAnalytics,AMER,Healthcare,SMB,33119,2024-04-23,2026-04-23,Chris Johnson,Enterprise,Current
+ACC-00086,Meta Technologies,EMEA,Logistics,Mid-Market,173216,2025-08-19,2028-08-18,Sarah Williams,Premium,Current
+ACC-00087,Green Point,EMEA,Healthcare,SMB,47767,2024-12-09,2027-12-09,Chris Miller,Enterprise,Overdue
+ACC-00088,Titan Path,EMEA,Retail,Mid-Market,167513,2025-08-14,2028-08-13,Chris Davis,Premium,Current
+ACC-00089,Titan Gate,AMER,Healthcare,Mid-Market,122135,2025-07-29,2026-07-29,Michael Garcia,Standard,Current
+ACC-00090,Crystal Peak,APAC,Retail,SMB,45512,2025-08-03,2028-08-02,Emily Garcia,Premium,Current
+ACC-00091,Silver Path,EMEA,Education,SMB,16528,2024-04-18,2026-04-18,David Garcia,Standard,Current
+ACC-00092,DataSystems LLC,AMER,Technology,SMB,17853,2025-10-29,2026-10-29,Amanda Williams,Premium,Current
+ACC-00093,QuantumCorp Co,AMER,Retail,Enterprise,532725,2025-11-09,2026-11-09,David Johnson,Premium,Current
+ACC-00094,Nova Group LLC,AMER,Retail,Mid-Market,138208,2025-03-28,2026-03-28,David Brown,Enterprise,Overdue
+ACC-00095,Crystal Peak Inc,APAC,Finance,SMB,24688,2024-11-27,2026-11-27,Chris Johnson,Premium,Current
+ACC-00096,Iron Path Inc,AMER,Healthcare,Mid-Market,69735,2024-07-01,2026-07-01,Jessica Davis,Standard,Current
+ACC-00097,Alpha Solutions Co,EMEA,Media,SMB,23653,2024-11-17,2027-11-17,Michael Williams,Standard,Current
+ACC-00098,Cyber AI,APAC,Manufacturing,SMB,28687,2025-11-05,2027-11-05,John Smith,Standard,Current
+ACC-00099,Green Bridge,AMER,Finance,SMB,48943,2025-02-03,2028-02-03,Jessica Miller,Standard,Current
+ACC-00100,Green Peak,AMER,Logistics,SMB,38428,2024-12-07,2026-12-07,Amanda Brown,Premium,Current
+ACC-00101,Golden Bridge,EMEA,Manufacturing,SMB,20866,2025-08-04,2028-08-03,Emily Garcia,Premium,Current
+ACC-00102,QuantumLabs,EMEA,Retail,Mid-Market,116955,2024-12-01,2027-12-01,David Brown,Standard,Current
+ACC-00103,Tech Hub,AMER,Manufacturing,Mid-Market,190490,2025-12-02,2028-12-01,Emily Davis,Enterprise,Current
+ACC-00104,Nova Digital Group,EMEA,Healthcare,Mid-Market,56235,2024-07-31,2026-07-31,Chris Davis,Standard,At Risk
+ACC-00105,Nova Group,AMER,Education,Mid-Market,88133,2024-10-02,2026-10-02,Jessica Davis,Standard,Current
+ACC-00106,Smart Labs Inc,AMER,Media,SMB,39663,2024-11-23,2026-11-23,Sarah Johnson,Premium,Current
+ACC-00107,Blue Gate,APAC,Real Estate,Enterprise,341719,2025-05-24,2028-05-23,Amanda Davis,Standard,Current
+ACC-00108,ApexSolutions Co,APAC,Retail,Mid-Market,179691,2024-04-24,2027-04-24,Michael Brown,Premium,Current
+ACC-00109,CyberAnalytics,AMER,Healthcare,Mid-Market,109079,2025-09-25,2026-09-25,David Smith,Enterprise,Current
+ACC-00110,MetaInc,EMEA,Energy,Enterprise,525526,2024-04-27,2026-04-27,Sarah Jones,Standard,Current
+ACC-00111,Cloud Hub,APAC,Energy,Mid-Market,188851,2025-11-14,2027-11-14,Chris Davis,Standard,Current
+ACC-00112,Apex Systems,AMER,Technology,SMB,25390,2024-09-04,2026-09-04,Jessica Smith,Standard,Current
+ACC-00113,Cloud Systems,AMER,Technology,Mid-Market,108283,2024-08-17,2026-08-17,John Miller,Standard,Current
+ACC-00114,Red Point,APAC,Healthcare,Mid-Market,75266,2025-11-30,2026-11-30,Emily Jones,Standard,Current
+ACC-00115,Prime Group,AMER,Retail,SMB,28306,2025-02-02,2026-02-02,David Miller,Premium,Current
+ACC-00116,Gamma Tech Group,APAC,Media,Mid-Market,157718,2024-10-02,2026-10-02,David Smith,Enterprise,Current
+ACC-00117,ApexAI,AMER,Education,Enterprise,723754,2025-10-13,2028-10-12,Amanda Smith,Standard,Current
+ACC-00118,Crystal Stone Inc,APAC,Finance,Mid-Market,128462,2024-07-27,2027-07-27,Michael Garcia,Premium,Current
+ACC-00119,Beta Solutions,AMER,Media,Mid-Market,109985,2024-04-23,2026-04-23,Jessica Johnson,Premium,Current
+ACC-00120,DataSoftware,EMEA,Real Estate,Mid-Market,156356,2025-01-25,2027-01-25,Amanda Davis,Enterprise,Current
+ACC-00121,DataInc LLC,EMEA,Media,SMB,43551,2025-06-14,2026-06-14,Jessica Johnson,Premium,Current
+ACC-00122,DigitalInc,AMER,Real Estate,Mid-Market,169061,2025-11-23,2027-11-23,Emily Johnson,Enterprise,Current
+ACC-00123,Delta Systems,APAC,Media,SMB,42318,2025-10-14,2028-10-13,Amanda Garcia,Premium,Current
+ACC-00124,Iron Point Group,AMER,Finance,Mid-Market,117765,2025-04-05,2026-04-05,David Garcia,Enterprise,Current
+ACC-00125,Red Gate,EMEA,Real Estate,Mid-Market,76766,2024-02-17,2027-02-16,Emily Brown,Standard,Current
+ACC-00126,Tech Corp,EMEA,Healthcare,SMB,19962,2025-01-17,2028-01-17,Amanda Smith,Standard,Current
+ACC-00127,Iron Stream Co,AMER,Real Estate,Mid-Market,153865,2025-02-26,2027-02-26,Sarah Smith,Standard,Overdue
+ACC-00128,Global Systems Co,AMER,Technology,Mid-Market,89734,2024-12-15,2027-12-15,Emily Garcia,Standard,Current
+ACC-00129,CloudCorp LLC,AMER,Manufacturing,SMB,33167,2024-03-01,2026-03-01,Chris Davis,Standard,Current
+ACC-00130,Apex Hub,AMER,Healthcare,Mid-Market,84624,2025-10-06,2028-10-05,Emily Williams,Enterprise,Current
+ACC-00131,DigitalAnalytics Group,EMEA,Retail,Mid-Market,159597,2025-08-09,2027-08-09,David Garcia,Enterprise,Current
+ACC-00132,NeuralSolutions LLC,AMER,Media,Mid-Market,75571,2024-03-25,2026-03-25,Emily Miller,Premium,Current
+ACC-00133,Global Digital,AMER,Finance,Mid-Market,169317,2024-02-16,2026-02-15,Jessica Garcia,Standard,At Risk
+ACC-00134,MetaSoftware,EMEA,Education,Enterprise,631965,2024-03-10,2026-03-10,Chris Jones,Standard,Current
+ACC-00135,Digital Inc,AMER,Retail,Enterprise,686789,2024-08-30,2026-08-30,Chris Smith,Standard,Current
+ACC-00136,Global Tech,APAC,Media,SMB,18067,2024-09-10,2027-09-10,David Garcia,Enterprise,Current
+ACC-00137,CloudCorp Co,EMEA,Retail,SMB,42519,2025-07-13,2027-07-13,John Miller,Standard,Overdue
+ACC-00138,Neural AI,APAC,Education,SMB,43610,2025-06-28,2027-06-28,Jessica Smith,Standard,Current
+ACC-00139,Quantum Analytics LLC,EMEA,Healthcare,Mid-Market,98379,2024-05-04,2027-05-04,Chris Jones,Enterprise,Current
+ACC-00140,DigitalSystems,AMER,Technology,Enterprise,660130,2025-03-25,2027-03-25,Michael Smith,Premium,Current
+ACC-00141,Red Bridge,AMER,Logistics,SMB,32589,2025-11-08,2026-11-08,Chris Williams,Standard,Current
+ACC-00142,Crystal Bridge,APAC,Retail,SMB,17798,2025-11-21,2026-11-21,Amanda Williams,Standard,Current
+ACC-00143,Cyber Systems,EMEA,Finance,Mid-Market,82405,2025-03-24,2027-03-24,Michael Smith,Standard,Current
+ACC-00144,TechInc,EMEA,Logistics,SMB,22411,2024-11-16,2027-11-16,John Brown,Standard,Current
+ACC-00145,CyberInc Group,AMER,Media,SMB,17612,2025-06-30,2027-06-30,Sarah Davis,Premium,Current
+ACC-00146,Green Gate,AMER,Retail,Mid-Market,199504,2025-08-24,2028-08-23,David Miller,Premium,Current
+ACC-00147,Global Systems,AMER,Education,Mid-Market,168814,2024-05-08,2026-05-08,Emily Miller,Premium,Current
+ACC-00148,Blue Stream,EMEA,Education,Mid-Market,51654,2024-11-12,2026-11-12,Michael Miller,Premium,Current
+ACC-00149,Crystal Stone Group,AMER,Healthcare,Mid-Market,78454,2025-09-29,2026-09-29,Chris Smith,Premium,Current
+ACC-00150,Data Analytics,AMER,Manufacturing,SMB,16492,2024-08-25,2027-08-25,Emily Brown,Premium,Current

@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  churnguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: churnguard
+    ports:
+      - "8501:8501"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - APP_PASSWORD=${APP_PASSWORD:-churnguard2024}
+    volumes:
+      # Mount secrets file if exists (optional)
+      - ./.streamlit/secrets.toml:/app/.streamlit/secrets.toml:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# Optional: Add Redis for caching (future enhancement)
+# redis:
+#   image: redis:7-alpine
+#   container_name: churnguard-redis
+#   ports:
+#     - "6379:6379"
+#   volumes:
+#     - redis_data:/data
+#   restart: unless-stopped
+
+# Optional: Add PostgreSQL for persistent storage (future enhancement)
+# postgres:
+#   image: postgres:15-alpine
+#   container_name: churnguard-db
+#   environment:
+#     POSTGRES_USER: churnguard
+#     POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+#     POSTGRES_DB: churnguard
+#   volumes:
+#     - postgres_data:/var/lib/postgresql/data
+#   restart: unless-stopped
+
+# volumes:
+#   redis_data:
+#   postgres_data:

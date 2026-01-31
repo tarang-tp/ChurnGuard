@@ -1,0 +1,19 @@
+# Render.com Blueprint
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: churnguard
+    env: python
+    region: oregon  # or frankfurt, singapore, ohio
+    plan: free  # or starter ($7/mo for always-on)
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false  # Manually set in dashboard
+      - key: APP_PASSWORD
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.0
