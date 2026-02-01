@@ -179,4 +179,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-Built with ❤️ using Streamlit and AI
+Built with ❤️ using Streamlit and TRAE AI
