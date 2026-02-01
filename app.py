@@ -29,8 +29,10 @@ import os
 # OPTIONAL IMPORTS (graceful fallback if not installed)
 # =============================================================================
 
+# NEW
 try:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types  # Useful for configuration types
     GOOGLE_AI_AVAILABLE = True
 except ImportError:
     GOOGLE_AI_AVAILABLE = False
@@ -43,6 +45,14 @@ try:
 except ImportError:
     ANTHROPIC_AVAILABLE = False
     anthropic = None
+
+# Keywords AI / OpenAI-compatible support
+try:
+    import openai
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    openai = None
 
 try:
     from simple_salesforce import Salesforce
@@ -423,40 +433,8 @@ def check_password() -> bool:
     Simple password authentication.
     For production, use Streamlit-Authenticator or OAuth.
     """
-    # Check if already authenticated
-    if st.session_state.get("authenticated", False):
-        return True
-    
-    # Try to get password from secrets first
-    try:
-        correct_password = st.secrets.get("APP_PASSWORD", "churnguard2024")
-    except:
-        correct_password = "churnguard2024"  # Default for demo
-    
-    st.markdown("""
-    <div style="max-width: 400px; margin: 100px auto; text-align: center;">
-        <h1 style="color: #ffffff; font-family: 'Outfit', sans-serif;">🛡️ ChurnGuard</h1>
-        <p style="color: #8b949e;">AI-Powered ARR Risk & Retention Dashboard</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        password = st.text_input("Enter password to access dashboard", type="password", key="password_input")
-        if st.button("Login", use_container_width=True, type="primary"):
-            if hashlib.sha256(password.encode()).hexdigest() == hashlib.sha256(correct_password.encode()).hexdigest():
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("❌ Incorrect password")
-        
-        st.markdown("""
-        <p style="color: #6b7280; font-size: 0.8rem; margin-top: 20px; text-align: center;">
-            Demo password: <code>churnguard2024</code>
-        </p>
-        """, unsafe_allow_html=True)
-    
-    return False
+    # Authentication disabled - always allow access
+    return True
 
 # =============================================================================
 # DATA LOADING FUNCTIONS
@@ -465,12 +443,12 @@ def check_password() -> bool:
 def generate_sample_data(n_accounts: int = 300, seed: int = 42) -> pd.DataFrame:
     """Generate realistic sample customer data."""
     np.random.seed(seed)
-    
+
     regions = ["AMER", "EMEA", "APAC"]
     region_weights = [0.45, 0.35, 0.20]
     industries = ["Technology", "Healthcare", "Finance", "Retail", "Manufacturing", "Education"]
     company_sizes = ["SMB", "Mid-Market", "Enterprise"]
-    
+
     data = {
         "account_id": [f"ACC-{i:05d}" for i in range(1, n_accounts + 1)],
         "company_name": [f"Company {chr(65 + i % 26)}{i}" for i in range(n_accounts)],
@@ -487,12 +465,12 @@ def generate_sample_data(n_accounts: int = 300, seed: int = 42) -> pd.DataFrame:
             for _ in range(n_accounts)
         ],
     }
-    
+
     df = pd.DataFrame(data)
-    
+
     # Generate correlated metrics
     base_health = np.random.beta(5, 2, n_accounts)
-    
+
     df["core_module_adoption"] = np.clip(base_health * np.random.uniform(0.7, 1.3, n_accounts), 0.15, 1.0)
     df["onboarding_completion_pct"] = np.clip(base_health * np.random.uniform(0.8, 1.2, n_accounts), 0.2, 1.0)
     df["weekly_logins"] = np.clip((base_health * 10 * np.random.uniform(0.5, 1.5, n_accounts)).astype(int), 0, 20)
@@ -507,13 +485,13 @@ def generate_sample_data(n_accounts: int = 300, seed: int = 42) -> pd.DataFrame:
     df["days_since_last_login"] = np.clip(((1 - base_health) * 30 + np.random.exponential(5, n_accounts)).astype(int), 0, 90)
     df["escalation_count"] = np.clip(((1 - base_health) * 3 + np.random.poisson(0.5, n_accounts)).astype(int), 0, 10)
     df["avg_ticket_resolution_hours"] = np.clip(((1 - base_health) * 48 + np.random.exponential(12, n_accounts)), 1, 168)
-    
+
     return df
 
 def load_csv_data(salesforce_file, amplitude_file, zendesk_file) -> Optional[pd.DataFrame]:
     """
     Load and merge data from uploaded CSV files.
-    
+
     Expected columns:
     - Salesforce: account_id, company_name, region, arr_value, industry, company_size
     - Amplitude: account_id, weekly_logins, core_module_adoption, seat_utilization_pct, feature_adoption_score, time_to_first_value_days
@@ -524,14 +502,14 @@ def load_csv_data(salesforce_file, amplitude_file, zendesk_file) -> Optional[pd.
         sf_df = pd.read_csv(salesforce_file) if salesforce_file else None
         amp_df = pd.read_csv(amplitude_file) if amplitude_file else None
         zd_df = pd.read_csv(zendesk_file) if zendesk_file else None
-        
+
         # Start with Salesforce as base (required)
         if sf_df is None:
             st.error("Salesforce data is required as the base dataset")
             return None
-        
+
         merged_df = sf_df.copy()
-        
+
         # Merge Amplitude data
         if amp_df is not None and 'account_id' in amp_df.columns:
             # Rename columns if needed (handle sample data column names)
@@ -540,11 +518,11 @@ def load_csv_data(salesforce_file, amplitude_file, zendesk_file) -> Optional[pd.
             }
             amp_df = amp_df.rename(columns={k: v for k, v in column_mapping.items() if k in amp_df.columns})
             merged_df = merged_df.merge(amp_df, on='account_id', how='left', suffixes=('', '_amp'))
-        
+
         # Merge Zendesk data
         if zd_df is not None and 'account_id' in zd_df.columns:
             merged_df = merged_df.merge(zd_df, on='account_id', how='left', suffixes=('', '_zd'))
-        
+
         # Handle duplicate columns from merges (prefer non-suffixed version)
         for col in list(merged_df.columns):
             if col.endswith('_amp') or col.endswith('_zd'):
@@ -556,7 +534,7 @@ def load_csv_data(salesforce_file, amplitude_file, zendesk_file) -> Optional[pd.
                 else:
                     # Rename suffixed column to base name
                     merged_df = merged_df.rename(columns={col: base_col})
-        
+
         # Fill missing values with reasonable defaults
         numeric_cols = merged_df.select_dtypes(include=[np.number]).columns
         for col in numeric_cols:
@@ -565,9 +543,9 @@ def load_csv_data(salesforce_file, amplitude_file, zendesk_file) -> Optional[pd.
                 if pd.isna(median_val):
                     median_val = 0
                 merged_df[col] = merged_df[col].fillna(median_val)
-        
+
         return merged_df
-    
+
     except Exception as e:
         st.error(f"Error loading CSV files: {str(e)}")
         return None
@@ -575,13 +553,13 @@ def load_csv_data(salesforce_file, amplitude_file, zendesk_file) -> Optional[pd.
 def load_salesforce_data(username: str, password: str, security_token: str, domain: str = 'login') -> Optional[pd.DataFrame]:
     """
     Load account data from Salesforce via API.
-    
+
     Requires simple-salesforce library.
     """
     if not SALESFORCE_AVAILABLE:
         st.error("simple-salesforce library not installed. Run: pip install simple-salesforce")
         return None
-    
+
     try:
         sf = Salesforce(
             username=username,
@@ -589,7 +567,7 @@ def load_salesforce_data(username: str, password: str, security_token: str, doma
             security_token=security_token,
             domain=domain
         )
-        
+
         # SOQL query for account data with ARR
         query = """
         SELECT Id, Name, BillingCountry, Industry, AnnualRevenue, 
@@ -598,13 +576,13 @@ def load_salesforce_data(username: str, password: str, security_token: str, doma
         WHERE AnnualRevenue > 0
         LIMIT 1000
         """
-        
+
         results = sf.query_all(query)
-        
+
         if results['totalSize'] == 0:
             st.warning("No accounts found in Salesforce")
             return None
-        
+
         # Convert to DataFrame
         records = results['records']
         df = pd.DataFrame([{
@@ -616,9 +594,9 @@ def load_salesforce_data(username: str, password: str, security_token: str, doma
             'company_size': categorize_company_size(r.get('NumberOfEmployees', 0)),
             'contract_start_date': r.get('CreatedDate', '')[:10] if r.get('CreatedDate') else ''
         } for r in records])
-        
+
         return df
-    
+
     except Exception as e:
         st.error(f"Salesforce connection error: {str(e)}")
         return None
@@ -626,50 +604,50 @@ def load_salesforce_data(username: str, password: str, security_token: str, doma
 def load_amplitude_data(api_key: str, secret_key: str, start_date: str = None) -> Optional[pd.DataFrame]:
     """
     Load product usage data from Amplitude via API.
-    
+
     Note: This uses the Amplitude Export API. Adjust endpoints based on your Amplitude setup.
     """
     try:
         if start_date is None:
             start_date = (datetime.now() - timedelta(days=30)).strftime("%Y%m%d")
         end_date = datetime.now().strftime("%Y%m%d")
-        
+
         # Amplitude Export API endpoint (adjust for your project)
         url = f"https://amplitude.com/api/2/export"
-        
+
         params = {
             'start': f"{start_date}T00",
             'end': f"{end_date}T23"
         }
-        
+
         response = requests.get(
             url,
             auth=(api_key, secret_key),
             params=params,
             timeout=60
         )
-        
+
         if response.status_code == 200:
             # Parse response (format depends on Amplitude setup)
             # This is a simplified example - actual implementation depends on your event structure
             data = response.json() if response.headers.get('content-type') == 'application/json' else []
-            
+
             if not data:
                 st.warning("No data returned from Amplitude. Using sample data.")
                 return None
-            
+
             # Process and aggregate by account
             # (Implementation depends on your Amplitude event structure)
             df = pd.DataFrame(data)
             return df
-        
+
         elif response.status_code == 401:
             st.error("Amplitude authentication failed. Check your API credentials.")
             return None
         else:
             st.error(f"Amplitude API error: {response.status_code}")
             return None
-    
+
     except Exception as e:
         st.error(f"Amplitude connection error: {str(e)}")
         return None
@@ -677,25 +655,25 @@ def load_amplitude_data(api_key: str, secret_key: str, start_date: str = None) -
 def load_zendesk_data(subdomain: str, email: str, api_token: str) -> Optional[pd.DataFrame]:
     """
     Load support ticket data from Zendesk via API.
-    
+
     Requires zenpy library.
     """
     if not ZENDESK_AVAILABLE:
         st.error("zenpy library not installed. Run: pip install zenpy")
         return None
-    
+
     try:
         creds = {
             'email': email,
             'token': api_token,
             'subdomain': subdomain
         }
-        
+
         zenpy_client = Zenpy(**creds)
-        
+
         # Get tickets from last 90 days
         start_date = datetime.now() - timedelta(days=90)
-        
+
         tickets = []
         for ticket in zenpy_client.search(created_greater_than=start_date, type='ticket'):
             tickets.append({
@@ -707,24 +685,24 @@ def load_zendesk_data(subdomain: str, email: str, api_token: str) -> Optional[pd
                 'updated_at': ticket.updated_at,
                 'satisfaction_rating': getattr(ticket.satisfaction_rating, 'score', None) if ticket.satisfaction_rating else None
             })
-        
+
         df = pd.DataFrame(tickets)
-        
+
         if df.empty:
             st.warning("No tickets found in Zendesk")
             return None
-        
+
         # Aggregate by account
         account_stats = df.groupby('account_id').agg({
             'ticket_id': 'count',
             'priority': lambda x: (x == 'urgent').sum() + (x == 'high').sum(),
             'satisfaction_rating': 'mean'
         }).reset_index()
-        
+
         account_stats.columns = ['account_id', 'support_tickets_last_quarter', 'escalation_count', 'nps_score']
-        
+
         return account_stats
-    
+
     except Exception as e:
         st.error(f"Zendesk connection error: {str(e)}")
         return None
@@ -734,19 +712,19 @@ def merge_datasets(sf_df: pd.DataFrame, amp_df: Optional[pd.DataFrame], zd_df: O
     Merge data from multiple sources into unified dataset.
     """
     merged = sf_df.copy()
-    
+
     if amp_df is not None and not amp_df.empty and 'account_id' in amp_df.columns:
         merged = merged.merge(amp_df, on='account_id', how='left', suffixes=('', '_amp'))
-    
+
     if zd_df is not None and not zd_df.empty and 'account_id' in zd_df.columns:
         merged = merged.merge(zd_df, on='account_id', how='left', suffixes=('', '_zd'))
-    
+
     # Fill missing numeric values
     numeric_cols = merged.select_dtypes(include=[np.number]).columns
     for col in numeric_cols:
         if merged[col].isna().any():
             merged[col] = merged[col].fillna(merged[col].median())
-    
+
     return merged
 
 # =============================================================================
@@ -757,14 +735,14 @@ def map_country_to_region(country: str) -> str:
     """Map country to region."""
     if not country:
         return "AMER"
-    
+
     country = country.upper()
-    
+
     apac_countries = ['CHINA', 'JAPAN', 'INDIA', 'AUSTRALIA', 'SINGAPORE', 'KOREA', 'HONG KONG', 'TAIWAN']
-    emea_countries = ['UNITED KINGDOM', 'UK', 'GERMANY', 'FRANCE', 'ITALY', 'SPAIN', 'NETHERLANDS', 
+    emea_countries = ['UNITED KINGDOM', 'UK', 'GERMANY', 'FRANCE', 'ITALY', 'SPAIN', 'NETHERLANDS',
                       'SWEDEN', 'NORWAY', 'DENMARK', 'SWITZERLAND', 'AUSTRIA', 'BELGIUM', 'IRELAND',
                       'SOUTH AFRICA', 'UAE', 'ISRAEL', 'SAUDI ARABIA']
-    
+
     if any(c in country for c in apac_countries):
         return "APAC"
     elif any(c in country for c in emea_countries):
@@ -796,7 +774,7 @@ def compute_risk_scores(df: pd.DataFrame, benchmarks: Benchmark) -> pd.DataFrame
     Compute risk scores for each account.
     """
     df = df.copy()
-    
+
     # Ensure required columns exist with defaults
     required_cols = {
         'core_module_adoption': 0.5,
@@ -811,11 +789,11 @@ def compute_risk_scores(df: pd.DataFrame, benchmarks: Benchmark) -> pd.DataFrame
         'feature_adoption_score': 0.5,
         'api_integration_count': 2
     }
-    
+
     for col, default in required_cols.items():
         if col not in df.columns:
             df[col] = default
-    
+
     # Calculate deviation scores (higher = worse)
     # Use np.maximum for element-wise max with pandas Series
     df['product_risk_score'] = (
@@ -823,24 +801,24 @@ def compute_risk_scores(df: pd.DataFrame, benchmarks: Benchmark) -> pd.DataFrame
         np.maximum(0, (benchmarks.seat_utilization - df['seat_utilization_pct'].clip(0, 1))) * 0.3 +
         np.maximum(0, (0.7 - df['feature_adoption_score'].clip(0, 1))) * 0.3
     )
-    
+
     df['process_risk_score'] = (
         np.maximum(0, (benchmarks.onboarding_completion - df['onboarding_completion_pct'].clip(0, 1))) * 0.35 +
         np.clip((benchmarks.weekly_logins - df['weekly_logins']) / benchmarks.weekly_logins, 0, 1) * 0.35 +
         np.clip((df['time_to_first_value_days'] - benchmarks.time_to_first_value_days) / 30, 0, 1) * 0.30
     )
-    
+
     df['development_risk_score'] = (
         np.maximum(0, (0.8 - df['training_completion_pct'].clip(0, 1))) * 0.5 +
         np.clip((5 - df['api_integration_count']) / 5, 0, 1) * 0.5
     )
-    
+
     df['relationship_risk_score'] = (
         np.clip((benchmarks.nps_score - df['nps_score']) / 10, 0, 1) * 0.35 +
         np.maximum(0, (0.8 - df['csm_engagement_score'].clip(0, 1))) * 0.35 +
         np.clip(df['support_tickets_last_quarter'] / 10, 0, 1) * 0.30
     )
-    
+
     # Overall churn probability
     df['churn_probability'] = (
         df['product_risk_score'] * RISK_WEIGHTS['product'] +
@@ -848,17 +826,17 @@ def compute_risk_scores(df: pd.DataFrame, benchmarks: Benchmark) -> pd.DataFrame
         df['development_risk_score'] * RISK_WEIGHTS['development'] +
         df['relationship_risk_score'] * RISK_WEIGHTS['relationship']
     )
-    
+
     # Normalize to 0-1 range
     df['churn_probability'] = df['churn_probability'].clip(0, 1)
-    
+
     # Risk tier assignment
     df['risk_tier'] = pd.cut(
         df['churn_probability'],
         bins=[0, 0.3, 0.6, 1.0],
         labels=['Low', 'Medium', 'High']
     )
-    
+
     return df
 
 def compute_risk_attribution(df: pd.DataFrame, benchmarks: Benchmark) -> Dict:
@@ -867,15 +845,15 @@ def compute_risk_attribution(df: pd.DataFrame, benchmarks: Benchmark) -> Dict:
     """
     at_risk = df[df['risk_tier'].isin(['High', 'Medium'])]
     total_risk_arr = at_risk['arr_value'].sum() if 'arr_value' in at_risk.columns else 0
-    
+
     # Category scores
     product_risk = df['product_risk_score'].mean() if 'product_risk_score' in df.columns else 0.3
     process_risk = df['process_risk_score'].mean() if 'process_risk_score' in df.columns else 0.25
     development_risk = df['development_risk_score'].mean() if 'development_risk_score' in df.columns else 0.25
     relationship_risk = df['relationship_risk_score'].mean() if 'relationship_risk_score' in df.columns else 0.2
-    
+
     total_raw_risk = product_risk + process_risk + development_risk + relationship_risk
-    
+
     if total_raw_risk > 0:
         product_pct = (product_risk / total_raw_risk) * 100
         process_pct = (process_risk / total_raw_risk) * 100
@@ -883,7 +861,7 @@ def compute_risk_attribution(df: pd.DataFrame, benchmarks: Benchmark) -> Dict:
         relationship_pct = (relationship_risk / total_raw_risk) * 100
     else:
         product_pct = process_pct = development_pct = relationship_pct = 25
-    
+
     return {
         "total_risk_arr": total_risk_arr,
         "at_risk_accounts": len(at_risk),
@@ -1007,16 +985,16 @@ def prepare_analysis_summary(df: pd.DataFrame, risk_data: Dict) -> str:
         'support_tickets_last_quarter': 'mean',
         'nps_score': 'mean'
     }).round(2).to_dict()
-    
+
     # Risk tier breakdown
     risk_breakdown = df.groupby('risk_tier').agg({
         'account_id': 'count',
         'arr_value': 'sum'
     }).to_dict()
-    
+
     # Top risk factors
     high_risk = df[df['risk_tier'] == 'High']
-    
+
     summary = {
         "overview": {
             "total_accounts": len(df),
@@ -1056,19 +1034,19 @@ def prepare_analysis_summary(df: pd.DataFrame, risk_data: Dict) -> str:
             "total_arr": int(high_risk['arr_value'].sum()) if len(high_risk) > 0 else 0
         }
     }
-    
+
     return json.dumps(summary, indent=2)
 
 def get_ai_insights(summary: str, api_key: str = None, provider: str = "google") -> Optional[str]:
     """
     Get AI-powered retention insights from Google Gemini or Anthropic Claude.
-    
+
     Args:
         summary: JSON summary of customer data
         api_key: API key for the AI provider
         provider: "google" for Gemini or "anthropic" for Claude
     """
-    
+
     # Common prompt for both providers
     prompt = f"""You are an elite Customer Success and Retention expert with deep expertise in SaaS metrics, churn analysis, and data-driven retention strategies.
 
@@ -1105,99 +1083,150 @@ Provide 6-8 specific, actionable recommendations ranked by estimated impact:
 
 Focus on actionable insights that a CS team could implement immediately. Use concrete numbers from the data to support your analysis. Be direct and specific - avoid generic advice."""
 
-    # Try Google Gemini first
-    if provider == "google" or (provider == "auto" and GOOGLE_AI_AVAILABLE):
+    # Try Keywords AI first (most reliable)
+    if provider == "keywords" or (provider == "auto" and OPENAI_AVAILABLE):
+        return _get_keywords_ai_insights(prompt, api_key)
+
+    # Try Google Gemini
+    elif provider == "google" and GOOGLE_AI_AVAILABLE:
         return _get_gemini_insights(prompt, api_key)
-    
+
     # Fallback to Anthropic Claude
-    elif provider == "anthropic" or (provider == "auto" and ANTHROPIC_AVAILABLE):
+    elif provider == "anthropic" and ANTHROPIC_AVAILABLE:
         return _get_claude_insights(prompt, api_key)
-    
+
     # No provider available
     return _get_fallback_insights()
 
 
-def _get_gemini_insights(prompt: str, api_key: str = None) -> str:
-    """Get insights from Google Gemini."""
-    if not GOOGLE_AI_AVAILABLE:
-        return """
-## ⚠️ Google AI Library Not Available
-
-The `google-generativeai` Python library is not installed. To enable AI-powered insights:
-
-```bash
-pip install google-generativeai
-```
-
-Then add your API key to Streamlit secrets or the sidebar.
-"""
+def _get_keywords_ai_insights(prompt: str, api_key: str = None) -> str:
+    """Get insights from Keywords AI."""
+    import requests as req
     
-    # Try to get API key from various sources
+    if not api_key:
+        try:
+            api_key = st.secrets.get("KEYWORDS_API_KEY")
+        except:
+            pass
+
+    if not api_key:
+        api_key = os.environ.get("KEYWORDS_API_KEY")
+
+    if not api_key:
+        return "❌ **Keywords AI API key not configured.**"
+
+    # Try multiple models in order of preference
+    models_to_try = [
+        "claude-sonnet-4-20250514",
+        "claude-3-5-sonnet-20241022", 
+        "gpt-4o-mini",
+        "gpt-4o",
+        "gemini-1.5-flash",
+    ]
+    
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}',
+    }
+    
+    last_error = None
+    
+    for model in models_to_try:
+        try:
+            data = {
+                'model': model,
+                'messages': [{'role': 'user', 'content': prompt}],
+                'max_tokens': 2500,
+                'temperature': 0.7
+            }
+            
+            response = req.post(
+                'https://api.keywordsai.co/api/chat/completions',
+                headers=headers,
+                json=data,
+                timeout=60
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                return result['choices'][0]['message']['content']
+            else:
+                last_error = response.text
+                # If it's an auth/credentials error, try the next model
+                if response.status_code in [401, 403]:
+                    continue
+                # For other errors, return immediately
+                return f"❌ **Error with Keywords AI ({model}):** {response.text}"
+                
+        except Exception as e:
+            last_error = str(e)
+            continue
+    
+    return f"❌ **Keywords AI: No working model found.** You may need to add provider credentials in your Keywords AI dashboard.\n\nLast error: {last_error}"
+
+
+def _get_gemini_insights(prompt: str, api_key: str = None) -> str:
+    """Get insights from Google Gemini using the new 2025 SDK."""
+    if not GOOGLE_AI_AVAILABLE:
+        return "## ⚠️ Google AI Library Not Available\n\nRun: `pip install google-genai`"
+
     if not api_key:
         try:
             api_key = st.secrets.get("GOOGLE_API_KEY")
         except:
             pass
-    
+
     if not api_key:
         api_key = os.environ.get("GOOGLE_API_KEY")
-    
+
     if not api_key:
-        return "❌ **Google API key not configured.** Add `GOOGLE_API_KEY` to your Streamlit secrets or environment variables. Get your key at [Google AI Studio](https://makersuite.google.com/app/apikey)."
-    
+        return "❌ **Google API key not configured.**"
+
     try:
-        # Configure Gemini
-        genai.configure(api_key=api_key)
-        
-        # Use Gemini 1.5 Flash for fast, cost-effective analysis
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        # Generate response
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
+        # 1. Instantiate the Client (Replaces genai.configure)
+        client = genai.Client(api_key=api_key)
+
+        # 2. Use the models.generate_content method
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
                 max_output_tokens=2500,
                 temperature=0.7,
             )
         )
-        
-        return response.text
-    
-    except Exception as e:
-        error_msg = str(e).lower()
-        if "api_key" in error_msg or "invalid" in error_msg or "authenticate" in error_msg:
-            return "❌ **Invalid Google API key.** Please check your API key and try again. Get a valid key at [Google AI Studio](https://makersuite.google.com/app/apikey)."
-        elif "quota" in error_msg or "rate" in error_msg:
-            return "⏳ **Rate limit exceeded.** Please wait a moment and try again."
-        else:
-            return f"❌ **Error getting AI insights:** {str(e)}"
 
+        return response.text
+
+    except Exception as e:
+        # Standardize error handling for the new client
+        return f"❌ **Error getting AI insights:** {str(e)}"
 
 def _get_claude_insights(prompt: str, api_key: str = None) -> str:
     """Get insights from Anthropic Claude (fallback)."""
     if not ANTHROPIC_AVAILABLE:
         return "❌ **Anthropic library not installed.** Run: `pip install anthropic`"
-    
+
     if not api_key:
         try:
             api_key = st.secrets.get("ANTHROPIC_API_KEY")
         except:
             api_key = os.environ.get("ANTHROPIC_API_KEY")
-    
+
     if not api_key:
         return "❌ **Anthropic API key not configured.**"
-    
+
     try:
         client = anthropic.Anthropic(api_key=api_key)
-        
+
         message = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=2500,
             messages=[{"role": "user", "content": prompt}]
         )
-        
+
         return message.content[0].text
-    
+
     except Exception as e:
         return f"❌ **Error with Claude:** {str(e)}"
 
@@ -1267,14 +1296,14 @@ def render_risk_category_card(category_name: str, category_data: Dict, icon: str
     pct = category_data["percentage"]
     health = category_data["health_score"]
     badge_class = get_risk_badge_class(pct)
-    
+
     if health >= 4:
         dot_color = "#26de81"
     elif health >= 3:
         dot_color = "#ff9f43"
     else:
         dot_color = "#ff4d4d"
-    
+
     card_html = f'''
     <div class="risk-card animate-fade-in">
         <div class="risk-card-header">
@@ -1287,21 +1316,21 @@ def render_risk_category_card(category_name: str, category_data: Dict, icon: str
     </div>
     '''
     st.markdown(card_html, unsafe_allow_html=True)
-    
+
     with st.expander(f"View {category_name} Details"):
         for metric_key, metric_data in category_data["sub_metrics"].items():
             is_inverse = metric_data.get("inverse", False)
             delta = metric_data["delta"]
-            
+
             if is_inverse:
                 delta_class = "metric-delta-negative" if delta > 0 else "metric-delta-positive"
                 status_text = "above benchmark ⚠️" if delta > 0 else "at benchmark ✓"
             else:
                 delta_class = "metric-delta-negative" if delta < 0 else "metric-delta-positive"
                 status_text = "below benchmark ⚠️" if delta < 0 else "at benchmark ✓"
-            
+
             delta_sign = "+" if delta > 0 else ""
-            
+
             sub_html = f'''
             <div class="sub-card">
                 <p class="sub-card-title">{metric_data["label"]}</p>
@@ -1320,9 +1349,9 @@ def render_header(risk_data: Dict, region: str, data_source: str) -> None:
     at_risk = risk_data["at_risk_accounts"]
     high_risk = risk_data["high_risk_accounts"]
     total = risk_data["total_accounts"]
-    
+
     source_badge = "📁 CSV" if data_source == "csv" else "🔌 API" if data_source == "api" else "🎲 Sample"
-    
+
     header_html = f'''
     <div class="dashboard-header">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
@@ -1368,36 +1397,45 @@ def render_ai_insights_section(df: pd.DataFrame, risk_data: Dict) -> None:
     st.markdown("### 🤖 AI-Powered Retention Analysis")
     st.markdown("""
     <p style="color: #8b949e; margin-bottom: 20px;">
-        Powered by Google Gemini AI • Analyzes merged Salesforce, Amplitude, and Zendesk data
+        Powered by Keywords AI • Analyzes merged Salesforce, Amplitude, and Zendesk data
     </p>
     """, unsafe_allow_html=True)
-    
+
     # AI Provider selection
     col_provider, col_key, col_btn = st.columns([1, 2, 1])
-    
+
     with col_provider:
         ai_provider = st.selectbox(
             "AI Provider",
-            ["Google Gemini", "Anthropic Claude"],
+            ["Keywords AI", "Google Gemini", "Anthropic Claude"],
             index=0,
             help="Select your AI provider"
         )
-    
+
     # Determine which API key to use
-    provider = "google" if "Google" in ai_provider else "anthropic"
-    key_name = "GOOGLE_API_KEY" if provider == "google" else "ANTHROPIC_API_KEY"
-    key_placeholder = "AIza..." if provider == "google" else "sk-ant-..."
-    
+    if "Keywords" in ai_provider:
+        provider = "keywords"
+        key_name = "KEYWORDS_API_KEY"
+        key_placeholder = "sk-..."
+    elif "Google" in ai_provider:
+        provider = "google"
+        key_name = "GOOGLE_API_KEY"
+        key_placeholder = "AIza..."
+    else:
+        provider = "anthropic"
+        key_name = "ANTHROPIC_API_KEY"
+        key_placeholder = "sk-ant-..."
+
     # Try to get API key from secrets first
     api_key = None
     try:
         api_key = st.secrets.get(key_name)
     except:
         pass
-    
+
     if not api_key:
         api_key = st.session_state.get(f"{provider}_api_key")
-    
+
     with col_key:
         if not api_key:
             new_key = st.text_input(
@@ -1409,18 +1447,20 @@ def render_ai_insights_section(df: pd.DataFrame, risk_data: Dict) -> None:
             if new_key:
                 st.session_state[f"{provider}_api_key"] = new_key
                 api_key = new_key
-    
+
     with col_btn:
         st.markdown("<br>", unsafe_allow_html=True)
         analyze_button = st.button("🔄 Generate AI Analysis", use_container_width=True, type="primary")
-    
+
     # Show API key help
     if not api_key:
-        if provider == "google":
+        if provider == "keywords":
+            st.info("💡 Get your Keywords AI API key at [Keywords AI Dashboard](https://keywordsai.co)")
+        elif provider == "google":
             st.info("💡 Get your free Google API key at [Google AI Studio](https://makersuite.google.com/app/apikey)")
         else:
             st.info("💡 Get your Anthropic API key at [console.anthropic.com](https://console.anthropic.com)")
-    
+
     if analyze_button or st.session_state.get("ai_insights"):
         if analyze_button:
             with st.spinner(f"🧠 {ai_provider} is analyzing your customer data..."):
@@ -1429,10 +1469,10 @@ def render_ai_insights_section(df: pd.DataFrame, risk_data: Dict) -> None:
                 st.session_state.ai_insights = insights
                 st.session_state.ai_summary = summary
                 st.session_state.ai_provider_used = ai_provider
-        
+
         insights = st.session_state.get("ai_insights", "")
         provider_used = st.session_state.get("ai_provider_used", ai_provider)
-        
+
         if insights:
             st.markdown(f"""
             <div class="ai-insight-card">
@@ -1442,9 +1482,9 @@ def render_ai_insights_section(df: pd.DataFrame, risk_data: Dict) -> None:
                 </div>
             </div>
             """, unsafe_allow_html=True)
-            
+
             st.markdown(insights)
-            
+
             # Show raw data summary in expander
             with st.expander("📊 View Data Summary Sent to AI"):
                 st.code(st.session_state.get("ai_summary", ""), language="json")
@@ -1452,17 +1492,17 @@ def render_ai_insights_section(df: pd.DataFrame, risk_data: Dict) -> None:
 def render_data_source_selector() -> Tuple[str, Optional[pd.DataFrame]]:
     """Render data source selection UI and return loaded data."""
     st.markdown("### 📥 Data Source")
-    
+
     source_mode = st.radio(
         "Choose data ingestion method:",
         ["🎲 Sample Data (Demo)", "📁 Upload CSV Files", "🔌 Connect APIs"],
         horizontal=True,
         label_visibility="collapsed"
     )
-    
+
     df = None
     data_source = "sample"
-    
+
     if "Sample Data" in source_mode:
         st.info("Using simulated customer data for demonstration. Connect real data sources for production use.")
         if st.button("🔄 Regenerate Sample Data"):
@@ -1470,34 +1510,34 @@ def render_data_source_selector() -> Tuple[str, Optional[pd.DataFrame]]:
         seed = st.session_state.get("data_seed", 42)
         df = generate_sample_data(n_accounts=300, seed=seed)
         data_source = "sample"
-    
+
     elif "Upload CSV" in source_mode:
         st.markdown("""
         <div class="api-input-container">
             <p style="color: #d1d5db; margin-bottom: 12px;">Upload your data files (CSV format)</p>
         </div>
         """, unsafe_allow_html=True)
-        
+
         col1, col2, col3 = st.columns(3)
-        
+
         with col1:
             st.markdown("**Salesforce Accounts** (Required)")
             sf_file = st.file_uploader("Account data with ARR", type=['csv'], key="sf_upload", label_visibility="collapsed")
-        
+
         with col2:
             st.markdown("**Amplitude Usage** (Optional)")
             amp_file = st.file_uploader("Product usage metrics", type=['csv'], key="amp_upload", label_visibility="collapsed")
-        
+
         with col3:
             st.markdown("**Zendesk Tickets** (Optional)")
             zd_file = st.file_uploader("Support ticket data", type=['csv'], key="zd_upload", label_visibility="collapsed")
-        
+
         if sf_file:
             df = load_csv_data(sf_file, amp_file, zd_file)
             data_source = "csv"
         else:
             st.warning("Please upload at least the Salesforce accounts CSV to proceed.")
-        
+
         with st.expander("📋 Expected CSV Formats"):
             st.markdown("""
             **Salesforce CSV columns:**
@@ -1509,20 +1549,20 @@ def render_data_source_selector() -> Tuple[str, Optional[pd.DataFrame]]:
             **Zendesk CSV columns:**
             `account_id, support_tickets_last_quarter, escalation_count, avg_ticket_resolution_hours, nps_score, csm_engagement_score`
             """)
-    
+
     elif "Connect APIs" in source_mode:
         st.markdown("""
         <div class="api-input-container">
             <p style="color: #d1d5db; margin-bottom: 12px;">🔐 API credentials are stored in session only (not persisted)</p>
         </div>
         """, unsafe_allow_html=True)
-        
+
         tabs = st.tabs(["Salesforce", "Amplitude", "Zendesk"])
-        
+
         sf_data = None
         amp_data = None
         zd_data = None
-        
+
         with tabs[0]:
             st.markdown("#### Salesforce Connection")
             col1, col2 = st.columns(2)
@@ -1532,7 +1572,7 @@ def render_data_source_selector() -> Tuple[str, Optional[pd.DataFrame]]:
             with col2:
                 sf_token = st.text_input("Security Token", type="password", key="sf_token")
                 sf_domain = st.selectbox("Domain", ["login", "test"], key="sf_domain")
-            
+
             if st.button("Connect to Salesforce", key="sf_connect"):
                 if all([sf_username, sf_password, sf_token]):
                     with st.spinner("Connecting to Salesforce..."):
@@ -1542,11 +1582,11 @@ def render_data_source_selector() -> Tuple[str, Optional[pd.DataFrame]]:
                             st.success(f"✅ Connected! Loaded {len(sf_data)} accounts")
                 else:
                     st.warning("Please fill all Salesforce credentials")
-            
+
             if st.session_state.get("sf_data") is not None:
                 st.markdown('<span class="connection-status status-connected">● Connected</span>', unsafe_allow_html=True)
                 sf_data = st.session_state.sf_data
-        
+
         with tabs[1]:
             st.markdown("#### Amplitude Connection")
             col1, col2 = st.columns(2)
@@ -1554,7 +1594,7 @@ def render_data_source_selector() -> Tuple[str, Optional[pd.DataFrame]]:
                 amp_api_key = st.text_input("API Key", type="password", key="amp_key")
             with col2:
                 amp_secret = st.text_input("Secret Key", type="password", key="amp_secret")
-            
+
             if st.button("Connect to Amplitude", key="amp_connect"):
                 if all([amp_api_key, amp_secret]):
                     with st.spinner("Connecting to Amplitude..."):
@@ -1564,11 +1604,11 @@ def render_data_source_selector() -> Tuple[str, Optional[pd.DataFrame]]:
                             st.success(f"✅ Connected!")
                 else:
                     st.warning("Please fill all Amplitude credentials")
-            
+
             if st.session_state.get("amp_data") is not None:
                 st.markdown('<span class="connection-status status-connected">● Connected</span>', unsafe_allow_html=True)
                 amp_data = st.session_state.amp_data
-        
+
         with tabs[2]:
             st.markdown("#### Zendesk Connection")
             col1, col2 = st.columns(2)
@@ -1577,7 +1617,7 @@ def render_data_source_selector() -> Tuple[str, Optional[pd.DataFrame]]:
                 zd_email = st.text_input("Email", key="zd_email", placeholder="admin@company.com")
             with col2:
                 zd_token = st.text_input("API Token", type="password", key="zd_token")
-            
+
             if st.button("Connect to Zendesk", key="zd_connect"):
                 if all([zd_subdomain, zd_email, zd_token]):
                     with st.spinner("Connecting to Zendesk..."):
@@ -1587,22 +1627,22 @@ def render_data_source_selector() -> Tuple[str, Optional[pd.DataFrame]]:
                             st.success(f"✅ Connected!")
                 else:
                     st.warning("Please fill all Zendesk credentials")
-            
+
             if st.session_state.get("zd_data") is not None:
                 st.markdown('<span class="connection-status status-connected">● Connected</span>', unsafe_allow_html=True)
                 zd_data = st.session_state.zd_data
-        
+
         # Merge available data
         sf_data = st.session_state.get("sf_data")
         amp_data = st.session_state.get("amp_data")
         zd_data = st.session_state.get("zd_data")
-        
+
         if sf_data is not None:
             df = merge_datasets(sf_data, amp_data, zd_data)
             data_source = "api"
         else:
             st.info("Connect to Salesforce (required) to load account data. Amplitude and Zendesk are optional.")
-    
+
     return data_source, df
 
 def render_sidebar(df: Optional[pd.DataFrame]) -> Tuple[str, Benchmark]:
@@ -1616,34 +1656,34 @@ def render_sidebar(df: Optional[pd.DataFrame]) -> Tuple[str, Benchmark]:
             <p style="color: #6b7280; font-size: 0.85rem; margin-top: 4px;">AI-Powered Retention Analytics</p>
         </div>
         """, unsafe_allow_html=True)
-        
+
         # Navigation
         st.markdown("### Navigation")
         nav_options = ["📊 Overview", "🤖 AI Insights", "📈 Revenue Impact", "🎯 Benchmarking", "📋 Accounts"]
-        
+
         if "nav_selection" not in st.session_state:
             st.session_state.nav_selection = "📊 Overview"
-        
+
         for nav in nav_options:
             is_selected = st.session_state.nav_selection == nav
             if st.button(nav, key=f"nav_{nav}", use_container_width=True, type="primary" if is_selected else "secondary"):
                 st.session_state.nav_selection = nav
-        
+
         st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-        
+
         # Region Filter
         st.markdown("### 🌍 Region Filter")
         regions = ["All Regions"]
         if df is not None and 'region' in df.columns:
             regions += df['region'].unique().tolist()
-        
+
         region = st.selectbox("Select Region", options=regions, label_visibility="collapsed")
-        
+
         st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-        
+
         # Benchmark Adjustments
         st.markdown("### ⚙️ Benchmarks")
-        
+
         with st.expander("Adjust Thresholds"):
             core_adoption = st.slider("Core Adoption %", 50, 100, 80) / 100
             onboarding = st.slider("Onboarding %", 50, 100, 90) / 100
@@ -1651,7 +1691,7 @@ def render_sidebar(df: Optional[pd.DataFrame]) -> Tuple[str, Benchmark]:
             ttfv = st.slider("TTFV (days)", 7, 30, 14)
             seat_util = st.slider("Seat Utilization %", 50, 100, 75) / 100
             nps = st.slider("NPS Score", 5.0, 10.0, 8.0, 0.5)
-        
+
         benchmarks = Benchmark(
             core_module_adoption=core_adoption,
             onboarding_completion=onboarding,
@@ -1660,16 +1700,16 @@ def render_sidebar(df: Optional[pd.DataFrame]) -> Tuple[str, Benchmark]:
             seat_utilization=seat_util,
             nps_score=nps
         )
-        
+
         st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-        
+
         # Data status
         st.markdown("### 📊 Data Status")
         if df is not None:
             st.success(f"✅ {len(df)} accounts loaded")
         else:
             st.warning("No data loaded")
-        
+
         # Footer
         st.markdown("""
         <div style="position: fixed; bottom: 20px; left: 20px; right: 20px; max-width: 260px;">
@@ -1679,7 +1719,7 @@ def render_sidebar(df: Optional[pd.DataFrame]) -> Tuple[str, Benchmark]:
             </p>
         </div>
         """, unsafe_allow_html=True)
-        
+
         return region, benchmarks
 
 # =============================================================================
@@ -1689,7 +1729,7 @@ def render_sidebar(df: Optional[pd.DataFrame]) -> Tuple[str, Benchmark]:
 def render_risk_distribution_chart(risk_data: Dict) -> None:
     """Render risk distribution donut chart."""
     categories = risk_data["categories"]
-    
+
     labels = ["Product Risk", "Process Risk", "Development Risk", "Relationship Risk"]
     values = [
         categories["product"]["percentage"],
@@ -1698,7 +1738,7 @@ def render_risk_distribution_chart(risk_data: Dict) -> None:
         categories["relationship"]["percentage"]
     ]
     colors = [COLORS["accent_red"], COLORS["accent_orange"], COLORS["accent_yellow"], COLORS["accent_purple"]]
-    
+
     fig = go.Figure(data=[go.Pie(
         labels=labels,
         values=values,
@@ -1707,7 +1747,7 @@ def render_risk_distribution_chart(risk_data: Dict) -> None:
         textinfo='percent',
         textfont=dict(size=12, color='white', family='JetBrains Mono'),
     )])
-    
+
     fig.update_layout(
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5, font=dict(color='#8b949e', size=11)),
@@ -1717,14 +1757,14 @@ def render_risk_distribution_chart(risk_data: Dict) -> None:
         height=300,
         annotations=[dict(text=f'<b>{sum(values):.0f}%</b>', x=0.5, y=0.5, font=dict(size=20, color='white'), showarrow=False)]
     )
-    
+
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 def render_arr_by_risk_chart(df: pd.DataFrame) -> None:
     """Render ARR by risk tier bar chart."""
     arr_by_tier = df.groupby('risk_tier')['arr_value'].sum().reset_index()
     arr_by_tier.columns = ['Risk Tier', 'ARR']
-    
+
     fig = px.bar(
         arr_by_tier,
         x='Risk Tier',
@@ -1732,7 +1772,7 @@ def render_arr_by_risk_chart(df: pd.DataFrame) -> None:
         color='Risk Tier',
         color_discrete_map={'Low': COLORS['accent_green'], 'Medium': COLORS['accent_orange'], 'High': COLORS['accent_red']}
     )
-    
+
     fig.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -1741,7 +1781,7 @@ def render_arr_by_risk_chart(df: pd.DataFrame) -> None:
         showlegend=False,
         height=300
     )
-    
+
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 # =============================================================================
@@ -1756,17 +1796,17 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
-    
+
     inject_custom_css()
-    
+
     # Authentication
     if not check_password():
         return
-    
+
     # Initialize session state
     if "data_seed" not in st.session_state:
         st.session_state.data_seed = 42
-    
+
     # Data source selection (in main area first)
     st.markdown("""
     <div style="text-align: center; padding: 10px 0 20px 0;">
@@ -1776,45 +1816,45 @@ def main():
         <p style="color: #8b949e; font-size: 1rem;">AI-Powered ARR Risk & Retention Dashboard</p>
     </div>
     """, unsafe_allow_html=True)
-    
+
     # Load data
     with st.expander("📥 Data Source Configuration", expanded=st.session_state.get("df") is None):
         data_source, df = render_data_source_selector()
         if df is not None:
             st.session_state.df = df
             st.session_state.data_source = data_source
-    
+
     # Use cached data if available
     df = st.session_state.get("df")
     data_source = st.session_state.get("data_source", "sample")
-    
+
     if df is None:
         st.info("👆 Please configure a data source above to get started.")
         return
-    
+
     # Sidebar
     region, benchmarks = render_sidebar(df)
-    
+
     # Filter by region
     if region != "All Regions":
         df_filtered = df[df["region"] == region].copy()
     else:
         df_filtered = df.copy()
-    
+
     # Compute risk scores
     df_filtered = compute_risk_scores(df_filtered, benchmarks)
     risk_data = compute_risk_attribution(df_filtered, benchmarks)
-    
+
     # Navigation-based content
     nav = st.session_state.get("nav_selection", "📊 Overview")
-    
+
     if nav == "📊 Overview":
         render_header(risk_data, region, data_source)
-        
+
         st.markdown("### Risk Attribution by Category")
-        
+
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
             render_risk_category_card("Product Risk", risk_data["categories"]["product"], "🔧")
         with col2:
@@ -1823,9 +1863,9 @@ def main():
             render_risk_category_card("Development Risk", risk_data["categories"]["development"], "📚")
         with col4:
             render_risk_category_card("Relationship Risk", risk_data["categories"]["relationship"], "🤝")
-        
+
         st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-        
+
         chart_col1, chart_col2 = st.columns([1, 2])
         with chart_col1:
             st.markdown("#### Risk Distribution")
@@ -1833,40 +1873,271 @@ def main():
         with chart_col2:
             st.markdown("#### ARR by Risk Tier")
             render_arr_by_risk_chart(df_filtered)
-    
+
     elif nav == "🤖 AI Insights":
         render_header(risk_data, region, data_source)
         render_ai_insights_section(df_filtered, risk_data)
-    
+
     elif nav == "📈 Revenue Impact":
-        st.markdown("### 💰 Revenue Impact Analysis")
+        st.markdown("""
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 700; color: #ffffff; margin: 0;">
+                💰 Revenue Impact Analysis
+            </h2>
+            <p style="color: #8b949e; margin-top: 8px;">Understand your ARR at risk and potential savings from retention improvements</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        total_arr = df_filtered['arr_value'].sum()
+        high_risk_arr = df_filtered[df_filtered['risk_tier'] == 'High']['arr_value'].sum()
+        med_risk_arr = df_filtered[df_filtered['risk_tier'] == 'Medium']['arr_value'].sum()
+        low_risk_arr = df_filtered[df_filtered['risk_tier'] == 'Low']['arr_value'].sum()
         
+        # Premium metric cards with gradient backgrounds
+        st.markdown("""
+        <style>
+        .revenue-card {
+            background: linear-gradient(135deg, rgba(30,35,45,0.9) 0%, rgba(20,25,35,0.95) 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .revenue-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99,102,241,0.4);
+            box-shadow: 0 12px 40px rgba(99,102,241,0.15);
+        }
+        .revenue-card .value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 12px 0 8px 0;
+        }
+        .revenue-card .label {
+            color: #8b949e;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .revenue-card .delta {
+            font-size: 0.85rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        .delta-danger { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .delta-warning { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .delta-success { background: rgba(34,197,94,0.2); color: #22c55e; }
+        </style>
+        """, unsafe_allow_html=True)
+
         col1, col2, col3, col4 = st.columns(4)
+        
         with col1:
-            st.metric("Total ARR", format_currency(df_filtered['arr_value'].sum()))
+            st.markdown(f"""
+            <div class="revenue-card">
+                <div class="label">Total Portfolio ARR</div>
+                <div class="value" style="color: #ffffff;">{format_currency(total_arr)}</div>
+                <div class="delta delta-success">📊 {len(df_filtered)} accounts</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
         with col2:
-            high_risk_arr = df_filtered[df_filtered['risk_tier'] == 'High']['arr_value'].sum()
-            st.metric("High Risk ARR", format_currency(high_risk_arr), delta=f"-{high_risk_arr/df_filtered['arr_value'].sum()*100:.1f}%")
+            pct = high_risk_arr/total_arr*100 if total_arr > 0 else 0
+            st.markdown(f"""
+            <div class="revenue-card">
+                <div class="label">🔴 Critical Risk ARR</div>
+                <div class="value" style="color: #ef4444;">{format_currency(high_risk_arr)}</div>
+                <div class="delta delta-danger">⚠️ {pct:.1f}% of portfolio</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
         with col3:
-            med_risk_arr = df_filtered[df_filtered['risk_tier'] == 'Medium']['arr_value'].sum()
-            st.metric("Medium Risk ARR", format_currency(med_risk_arr))
+            pct = med_risk_arr/total_arr*100 if total_arr > 0 else 0
+            st.markdown(f"""
+            <div class="revenue-card">
+                <div class="label">🟡 Watch List ARR</div>
+                <div class="value" style="color: #f59e0b;">{format_currency(med_risk_arr)}</div>
+                <div class="delta delta-warning">👀 {pct:.1f}% of portfolio</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
         with col4:
-            low_risk_arr = df_filtered[df_filtered['risk_tier'] == 'Low']['arr_value'].sum()
-            st.metric("Healthy ARR", format_currency(low_risk_arr))
+            pct = low_risk_arr/total_arr*100 if total_arr > 0 else 0
+            st.markdown(f"""
+            <div class="revenue-card">
+                <div class="label">🟢 Healthy ARR</div>
+                <div class="value" style="color: #22c55e;">{format_currency(low_risk_arr)}</div>
+                <div class="delta delta-success">✅ {pct:.1f}% secure</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+
+        # Two column layout for charts
+        chart_col1, chart_col2 = st.columns(2)
         
-        st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
-        render_arr_by_risk_chart(df_filtered)
+        with chart_col1:
+            st.markdown("#### 📊 ARR Waterfall Analysis")
+            # Waterfall chart
+            waterfall_data = [
+                {"label": "Total ARR", "value": total_arr, "color": "#6366f1"},
+                {"label": "High Risk", "value": -high_risk_arr, "color": "#ef4444"},
+                {"label": "Medium Risk", "value": -med_risk_arr, "color": "#f59e0b"},
+                {"label": "Secure ARR", "value": low_risk_arr, "color": "#22c55e"}
+            ]
+            
+            fig = go.Figure(go.Waterfall(
+                name="ARR Flow",
+                orientation="v",
+                measure=["absolute", "relative", "relative", "total"],
+                x=["Total ARR", "High Risk", "Medium Risk", "Secure ARR"],
+                y=[total_arr, -high_risk_arr, -med_risk_arr, low_risk_arr],
+                connector={"line": {"color": "rgba(255,255,255,0.2)"}},
+                decreasing={"marker": {"color": "#ef4444"}},
+                increasing={"marker": {"color": "#22c55e"}},
+                totals={"marker": {"color": "#6366f1"}}
+            ))
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='#8b949e'),
+                height=350,
+                margin=dict(t=20, b=20, l=20, r=20),
+                xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                yaxis=dict(gridcolor='rgba(255,255,255,0.05)')
+            )
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+        with chart_col2:
+            st.markdown("#### 🎯 Risk Distribution by Industry")
+            if 'industry' in df_filtered.columns:
+                industry_risk = df_filtered.groupby(['industry', 'risk_tier'])['arr_value'].sum().reset_index()
+                # Convert to string to avoid categorical issues
+                industry_risk['industry'] = industry_risk['industry'].astype(str)
+                industry_risk['risk_tier'] = industry_risk['risk_tier'].astype(str)
+                
+                fig = px.bar(
+                    industry_risk, 
+                    x='industry', 
+                    y='arr_value',
+                    color='risk_tier',
+                    color_discrete_map={'High': '#ef4444', 'Medium': '#f59e0b', 'Low': '#22c55e'},
+                    barmode='stack'
+                )
+                fig.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    height=350,
+                    margin=dict(t=20, b=20, l=20, r=20),
+                    xaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=''),
+                    yaxis=dict(gridcolor='rgba(255,255,255,0.05)', title='ARR'),
+                    font=dict(color='#8b949e'),
+                    legend=dict(title='Risk Tier', font=dict(color='#8b949e'))
+                )
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            else:
+                render_arr_by_risk_chart(df_filtered)
+
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+
+        # Projected Savings Calculator
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.1) 100%); 
+                    border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; padding: 24px; margin: 20px 0;">
+            <h4 style="color: #ffffff; margin-bottom: 16px;">💡 Retention Impact Calculator</h4>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Regional breakdown
-        st.markdown("#### ARR by Region")
-        regional_arr = df_filtered.groupby('region')['arr_value'].sum().reset_index()
-        fig = px.pie(regional_arr, values='arr_value', names='region', hole=0.4)
-        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', height=300)
-        st.plotly_chart(fig, use_container_width=True)
-    
+        calc_col1, calc_col2, calc_col3 = st.columns(3)
+        
+        with calc_col1:
+            retention_improvement = st.slider("Retention Improvement %", 1, 25, 10)
+        with calc_col2:
+            at_risk_arr = high_risk_arr + med_risk_arr
+            potential_save = at_risk_arr * (retention_improvement / 100)
+            st.markdown(f"""
+            <div style="text-align: center; padding: 20px;">
+                <div style="color: #8b949e; font-size: 0.9rem;">Potential ARR Saved</div>
+                <div style="font-size: 2rem; font-weight: 700; color: #22c55e;">{format_currency(potential_save)}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with calc_col3:
+            # Assuming avg customer lifetime
+            lifetime_value = potential_save * 3  # 3-year LTV
+            st.markdown(f"""
+            <div style="text-align: center; padding: 20px;">
+                <div style="color: #8b949e; font-size: 0.9rem;">3-Year LTV Impact</div>
+                <div style="font-size: 2rem; font-weight: 700; color: #6366f1;">{format_currency(lifetime_value)}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Regional breakdown with better visualization
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        
+        region_col1, region_col2 = st.columns(2)
+        
+        with region_col1:
+            st.markdown("#### 🌍 ARR by Region")
+            regional_arr = df_filtered.groupby('region').agg({
+                'arr_value': 'sum',
+                'account_id': 'count',
+                'churn_probability': 'mean'
+            }).reset_index()
+            regional_arr.columns = ['Region', 'ARR', 'Accounts', 'Avg Risk']
+            
+            fig = px.bar(
+                regional_arr, x='Region', y='ARR',
+                color='Avg Risk',
+                color_continuous_scale=['#22c55e', '#f59e0b', '#ef4444'],
+                text=regional_arr['ARR'].apply(format_currency)
+            )
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                height=300,
+                font=dict(color='#8b949e'),
+                xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                yaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=''),
+                coloraxis_showscale=False
+            )
+            fig.update_traces(textposition='outside')
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        
+        with region_col2:
+            st.markdown("#### 📈 Company Size Distribution")
+            if 'company_size' in df_filtered.columns:
+                size_arr = df_filtered.groupby('company_size')['arr_value'].sum().reset_index()
+                fig = px.pie(size_arr, values='arr_value', names='company_size', hole=0.5)
+                fig.update_traces(
+                    textposition='inside',
+                    textinfo='percent+label',
+                    marker=dict(colors=['#6366f1', '#8b5cf6', '#a78bfa'])
+                )
+                fig.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    height=300,
+                    showlegend=False
+                )
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            else:
+                regional_arr = df_filtered.groupby('region')['arr_value'].sum().reset_index()
+                fig = px.pie(regional_arr, values='arr_value', names='region', hole=0.5)
+                fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', height=300)
+                st.plotly_chart(fig, use_container_width=True)
+
     elif nav == "🎯 Benchmarking":
-        st.markdown("### 🎯 Benchmark Comparison")
-        
+        st.markdown("""
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 700; color: #ffffff; margin: 0;">
+                🎯 Performance Benchmarking
+            </h2>
+            <p style="color: #8b949e; margin-top: 8px;">Compare your portfolio performance against industry best practices</p>
+        </div>
+        """, unsafe_allow_html=True)
+
         categories_list = ['Core Adoption', 'Onboarding', 'Seat Utilization', 'Training', 'NPS', 'CSM Engagement']
         actual_values = [
             df_filtered['core_module_adoption'].mean() * 100,
@@ -1884,22 +2155,269 @@ def main():
             benchmarks.nps_score * 10,
             80
         ]
+
+        # Premium benchmark comparison cards
+        st.markdown("""
+        <style>
+        .benchmark-card {
+            background: linear-gradient(135deg, rgba(30,35,45,0.9) 0%, rgba(20,25,35,0.95) 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin-bottom: 16px;
+        }
+        .benchmark-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(99,102,241,0.4);
+        }
+        .benchmark-card .metric-name {
+            color: #8b949e;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        .benchmark-card .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .benchmark-card .benchmark-target {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        .benchmark-card .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+        .status-above { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .status-below { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .status-close { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Display benchmark comparison cards
+        cols = st.columns(3)
+        icons = ['🎯', '🚀', '💺', '📚', '⭐', '🤝']
         
-        fig = go.Figure()
-        fig.add_trace(go.Scatterpolar(r=actual_values, theta=categories_list, fill='toself', name='Actual', line_color=COLORS['accent_blue']))
-        fig.add_trace(go.Scatterpolar(r=benchmark_values, theta=categories_list, fill='toself', name='Benchmark', line_color=COLORS['accent_green']))
-        fig.update_layout(
-            polar=dict(radialaxis=dict(visible=True, range=[0, 100], gridcolor='rgba(255,255,255,0.1)'), bgcolor='rgba(0,0,0,0)'),
-            paper_bgcolor='rgba(0,0,0,0)',
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5, font=dict(color='#8b949e')),
-            height=500
+        for i, (category, actual, benchmark) in enumerate(zip(categories_list, actual_values, benchmark_values)):
+            with cols[i % 3]:
+                diff = actual - benchmark
+                if diff >= 5:
+                    status_class = "status-above"
+                    status_text = f"↑ {diff:.1f}% above"
+                elif diff <= -5:
+                    status_class = "status-below"
+                    status_text = f"↓ {abs(diff):.1f}% below"
+                else:
+                    status_class = "status-close"
+                    status_text = f"≈ On target"
+                
+                color = "#22c55e" if diff >= 0 else "#ef4444"
+                
+                st.markdown(f"""
+                <div class="benchmark-card">
+                    <div class="metric-name">{icons[i]} {category}</div>
+                    <div class="metric-value" style="color: {color};">{actual:.1f}%</div>
+                    <div class="benchmark-target">Target: {benchmark:.0f}%</div>
+                    <div class="status-badge {status_class}">{status_text}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+
+        # Two column layout: Radar chart + Gauge charts
+        chart_col1, chart_col2 = st.columns([1, 1])
+        
+        with chart_col1:
+            st.markdown("#### 📊 Performance Radar")
+            fig = go.Figure()
+            fig.add_trace(go.Scatterpolar(
+                r=actual_values + [actual_values[0]],  # Close the polygon
+                theta=categories_list + [categories_list[0]],
+                fill='toself',
+                name='Your Portfolio',
+                line_color='#6366f1',
+                fillcolor='rgba(99,102,241,0.3)'
+            ))
+            fig.add_trace(go.Scatterpolar(
+                r=benchmark_values + [benchmark_values[0]],
+                theta=categories_list + [categories_list[0]],
+                fill='toself',
+                name='Industry Benchmark',
+                line_color='#22c55e',
+                fillcolor='rgba(34,197,94,0.15)'
+            ))
+            fig.update_layout(
+                polar=dict(
+                    radialaxis=dict(
+                        visible=True,
+                        range=[0, 100],
+                        gridcolor='rgba(255,255,255,0.1)',
+                        tickfont=dict(color='#6b7280')
+                    ),
+                    angularaxis=dict(
+                        gridcolor='rgba(255,255,255,0.1)',
+                        tickfont=dict(color='#8b949e')
+                    ),
+                    bgcolor='rgba(0,0,0,0)'
+                ),
+                paper_bgcolor='rgba(0,0,0,0)',
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.15,
+                    xanchor="center",
+                    x=0.5,
+                    font=dict(color='#8b949e')
+                ),
+                height=450,
+                margin=dict(t=30, b=50, l=60, r=60)
+            )
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+        with chart_col2:
+            st.markdown("#### 🎯 Key Metric Gauges")
+            
+            # Create gauge charts for top 3 metrics
+            gauge_metrics = [
+                ("Core Adoption", actual_values[0], benchmark_values[0]),
+                ("Onboarding", actual_values[1], benchmark_values[1]),
+                ("NPS Score", actual_values[4], benchmark_values[4])
+            ]
+            
+            for metric_name, value, target in gauge_metrics:
+                color = "#22c55e" if value >= target else "#ef4444" if value < target - 10 else "#f59e0b"
+                
+                fig = go.Figure(go.Indicator(
+                    mode="gauge+number+delta",
+                    value=value,
+                    delta={'reference': target, 'relative': False, 'position': "bottom"},
+                    title={'text': metric_name, 'font': {'size': 14, 'color': '#8b949e'}},
+                    number={'font': {'size': 28, 'color': color}},
+                    gauge={
+                        'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#2d3139"},
+                        'bar': {'color': color},
+                        'bgcolor': "rgba(30,35,45,0.5)",
+                        'borderwidth': 2,
+                        'bordercolor': "rgba(255,255,255,0.1)",
+                        'steps': [
+                            {'range': [0, target - 10], 'color': 'rgba(239,68,68,0.2)'},
+                            {'range': [target - 10, target], 'color': 'rgba(245,158,11,0.2)'},
+                            {'range': [target, 100], 'color': 'rgba(34,197,94,0.2)'}
+                        ],
+                        'threshold': {
+                            'line': {'color': "#ffffff", 'width': 2},
+                            'thickness': 0.8,
+                            'value': target
+                        }
+                    }
+                ))
+                fig.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    height=140,
+                    margin=dict(t=30, b=10, l=30, r=30)
+                )
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+
+        # Improvement recommendations section
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.1) 100%); 
+                    border: 1px solid rgba(99,102,241,0.3); border-radius: 16px; padding: 24px; margin: 20px 0;">
+            <h4 style="color: #ffffff; margin-bottom: 20px;">📈 Improvement Opportunities</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Find areas below benchmark
+        improvements = []
+        for i, (category, actual, benchmark) in enumerate(zip(categories_list, actual_values, benchmark_values)):
+            if actual < benchmark:
+                gap = benchmark - actual
+                improvements.append({
+                    'category': category,
+                    'actual': actual,
+                    'benchmark': benchmark,
+                    'gap': gap,
+                    'icon': icons[i]
+                })
+        
+        if improvements:
+            improvements.sort(key=lambda x: x['gap'], reverse=True)
+            
+            for imp in improvements[:3]:
+                potential_impact = imp['gap'] * 0.1  # Simplified impact calculation
+                st.markdown(f"""
+                <div style="background: rgba(30,35,45,0.6); border: 1px solid rgba(255,255,255,0.1); 
+                            border-radius: 12px; padding: 16px; margin-bottom: 12px;
+                            display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <span style="font-size: 1.5rem;">{imp['icon']}</span>
+                        <div>
+                            <div style="font-weight: 600; color: #ffffff;">{imp['category']}</div>
+                            <div style="color: #8b949e; font-size: 0.85rem;">Gap: {imp['gap']:.1f}% below benchmark</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: #ef4444; font-weight: 600;">{imp['actual']:.1f}% → {imp['benchmark']:.0f}%</div>
+                        <div style="color: #22c55e; font-size: 0.85rem;">+{potential_impact:.1f}% retention lift</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.success("🎉 Congratulations! All metrics are at or above benchmark!")
+
+        # Trend comparison (simulated)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("#### 📈 Performance Trend (Last 6 Months)")
+        
+        # Simulate trend data
+        months = ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan']
+        trend_data = []
+        for i, month in enumerate(months):
+            base_multiplier = 0.85 + (i * 0.03)  # Gradual improvement
+            for j, category in enumerate(categories_list):
+                trend_data.append({
+                    'Month': month,
+                    'Category': category,
+                    'Value': actual_values[j] * base_multiplier
+                })
+        
+        import pandas as pd
+        trend_df = pd.DataFrame(trend_data)
+        
+        fig = px.line(
+            trend_df, x='Month', y='Value', color='Category',
+            color_discrete_sequence=['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#22c55e', '#f59e0b']
         )
-        st.plotly_chart(fig, use_container_width=True)
-    
+        fig.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            height=300,
+            font=dict(color='#8b949e'),
+            xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+            yaxis=dict(gridcolor='rgba(255,255,255,0.05)', title='Score (%)'),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.3,
+                xanchor="center",
+                x=0.5,
+                font=dict(size=10)
+            )
+        )
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
     elif nav == "📋 Accounts":
         st.markdown("### 📋 Account Explorer")
-        
+
         col1, col2, col3 = st.columns(3)
         with col1:
             risk_filter = st.multiselect("Risk Tier", ["High", "Medium", "Low"], default=["High", "Medium"])
@@ -1910,7 +2428,7 @@ def main():
                 industry_filter = []
         with col3:
             search = st.text_input("Search by company name", "")
-        
+
         display_df = df_filtered.copy()
         if risk_filter:
             display_df = display_df[display_df['risk_tier'].isin(risk_filter)]
@@ -1918,23 +2436,23 @@ def main():
             display_df = display_df[display_df['industry'].isin(industry_filter)]
         if search:
             display_df = display_df[display_df['company_name'].str.contains(search, case=False, na=False)]
-        
+
         st.markdown(f"**Showing {len(display_df)} accounts**")
-        
+
         display_cols = ['account_id', 'company_name', 'region', 'arr_value', 'churn_probability', 'risk_tier']
         available_cols = [c for c in display_cols if c in display_df.columns]
-        
+
         show_df = display_df[available_cols].copy()
         if 'arr_value' in show_df.columns:
             show_df['arr_value'] = show_df['arr_value'].apply(format_currency)
         if 'churn_probability' in show_df.columns:
             show_df['churn_probability'] = (show_df['churn_probability'] * 100).round(0).astype(int).astype(str) + '%'
-        
+
         st.dataframe(show_df, use_container_width=True, hide_index=True, height=400)
-        
+
         csv = display_df.to_csv(index=False)
         st.download_button("📥 Download CSV", csv, "accounts.csv", "text/csv")
-    
+
     # Footer
     st.markdown("""
     <div style="text-align: center; padding: 40px 0 20px 0; border-top: 1px solid #2d3139; margin-top: 40px;">
@@ -1948,43 +2466,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-# =============================================================================
-# FUTURE ENHANCEMENTS (TODO)
-# =============================================================================
-"""
-Production Roadmap:
--------------------
-1. Multi-tenant Database
-   - PostgreSQL with SQLAlchemy ORM
-   - Row-level security per organization
-   - Connection pooling with pgbouncer
 
-2. Real OAuth Flows
-   - Salesforce OAuth 2.0 (Web Server Flow)
-   - Zendesk OAuth for enterprise customers
-   - Amplitude requires API keys only
-
-3. Background Jobs
-   - Celery + Redis for async data refresh
-   - Scheduled daily/weekly sync from APIs
-   - Webhook listeners for real-time updates
-
-4. Enhanced Security
-   - Streamlit-Authenticator with TOTP
-   - Auth0 or Okta SSO integration
-   - API key encryption at rest
-   - HTTPS enforcement (via reverse proxy)
-   - GDPR compliance: data export/deletion
-
-5. Advanced ML Features
-   - scikit-learn churn prediction model
-   - SHAP values for feature importance
-   - Time-series forecasting with Prophet
-   - Anomaly detection for early warning
-
-6. Operational Enhancements
-   - Structured logging with structlog
-   - Prometheus metrics + Grafana dashboards
-   - Sentry error tracking
-   - Rate limiting per tenant
-"""

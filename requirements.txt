@@ -12,7 +12,8 @@ numpy>=1.24.0
 plotly>=5.17.0
 
 # AI Analysis (choose one or both)
-google-generativeai>=0.3.0  # Primary: Google Gemini
+google-genai  # Primary: Google Gemini
+openai>=1.0.0  # Keywords AI (OpenAI-compatible)
 # anthropic>=0.18.0         # Alternative: Anthropic Claude
 
 # API Integrations (optional - graceful fallback if not installed)

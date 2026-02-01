@@ -2,19 +2,19 @@
 
 **AI-Powered ARR Risk & Retention Dashboard**
 
-A production-grade Streamlit dashboard that integrates Salesforce, Amplitude, and Zendesk data to identify churn risk and provides AI-powered retention recommendations using Claude.
-
-![Dashboard Preview](docs/dashboard-preview.png)
+A production-grade Streamlit dashboard that identifies customer churn risk and provides AI-powered retention recommendations. Integrates with Salesforce, Amplitude, and Zendesk data sources.
 
 ## ✨ Features
 
-### 📊 Data Ingestion
-- **Sample Data Mode**: Demo with realistic synthetic customer data
-- **CSV Upload**: Import data from exported files
-- **API Integration**: Direct connections to:
-  - **Salesforce**: Account and ARR data via SOQL
-  - **Amplitude**: Product usage and engagement metrics
-  - **Zendesk**: Support ticket analysis
+### 📊 Dashboard Pages
+
+| Page | Description |
+|------|-------------|
+| **Overview** | High-level portfolio health, risk distribution, and key metrics |
+| **AI Insights** | AI-powered churn analysis with actionable retention strategies |
+| **Revenue Impact** | ARR waterfall analysis, retention calculator, and regional breakdown |
+| **Benchmarking** | Performance radar, gauge charts, and improvement recommendations |
+| **Accounts** | Filterable account explorer with export functionality |
 
 ### 🎯 Risk Attribution
 - **Product Risk**: Module adoption, seat utilization, feature gaps
@@ -23,19 +23,31 @@ A production-grade Streamlit dashboard that integrates Salesforce, Amplitude, an
 - **Relationship Risk**: NPS scores, CSM engagement, support health
 
 ### 🤖 AI-Powered Insights
-- **Google Gemini Integration**: Deep analysis of merged customer data (primary)
+- **Keywords AI Integration** (Primary): Supports multiple LLM providers through one API
+- **Google Gemini Support**: Direct integration with Gemini models
 - **Anthropic Claude Support**: Alternative AI provider option
 - **Pain Point Detection**: Identifies top 4-6 churn drivers
 - **Root Cause Analysis**: Evidence-based explanations
 - **Actionable Recommendations**: Prioritized retention strategies with ARR impact estimates
 
+### 📈 Premium Visualizations
+- Interactive waterfall charts for ARR analysis
+- Radar charts for benchmark comparison
+- Animated gauge charts for key metrics
+- Stacked bar charts for industry risk breakdown
+- Trend analysis with historical performance
+
 ### 🎨 Modern UI
-- Dark theme with SaaS-grade aesthetics
-- Interactive charts and visualizations
+- Dark theme with premium SaaS aesthetics
+- Gradient cards with hover animations
 - Responsive card-based layout
 - Region and benchmark filtering
 
 ## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.10+
+- Docker (optional)
 
 ### Local Development
 
@@ -51,7 +63,7 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure secrets
+# Configure secrets (optional - can also input keys in UI)
 cp .streamlit/secrets.toml.example .streamlit/secrets.toml
 # Edit secrets.toml with your API keys
 
@@ -62,43 +74,50 @@ streamlit run app.py
 ### Docker
 
 ```bash
-# Using docker-compose
-docker-compose up -d
-
-# Or standalone
+# Build and run
 docker build -t churnguard .
-docker run -p 8501:8501 -e ANTHROPIC_API_KEY="sk-ant-..." churnguard
+docker run -p 8501:8501 churnguard
+
+# Or using docker-compose
+docker-compose up -d
 ```
+
+Then open **http://localhost:8501** in your browser.
 
 ## 📦 Project Structure
 
 ```
 churnguard/
-├── app.py                 # Main Streamlit application
-├── requirements.txt       # Python dependencies
-├── Dockerfile            # Container configuration
-├── docker-compose.yml    # Docker Compose setup
-├── render.yaml           # Render.com deployment
-├── DEPLOYMENT.md         # Deployment guide
+├── app.py                    # Main Streamlit application (~2400 lines)
+├── requirements.txt          # Python dependencies
+├── Dockerfile               # Container configuration
+├── docker-compose.yml       # Docker Compose setup
+├── render.yaml              # Render.com deployment
+├── DEPLOYMENT.md            # Deployment guide
 ├── .streamlit/
-│   ├── config.toml       # Streamlit theme config
-│   └── secrets.toml.example  # Secrets template
+│   ├── config.toml          # Streamlit theme config
+│   └── secrets.toml.example # Secrets template
 └── .gitignore
 ```
 
 ## 🔧 Configuration
 
-### Environment Variables
+### API Keys
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GOOGLE_API_KEY` | Google Gemini API key for AI insights | Yes (for AI features) |
-| `ANTHROPIC_API_KEY` | Alternative: Claude API key | No (optional) |
-| `APP_PASSWORD` | Dashboard access password | No (default: churnguard2024) |
+You can configure API keys in two ways:
+
+1. **In the UI**: Enter your API key directly on the AI Insights page
+2. **In secrets.toml**: Add keys to `.streamlit/secrets.toml`
+
+| Provider | Key Name | Get Your Key |
+|----------|----------|--------------|
+| Keywords AI | `KEYWORDS_API_KEY` | [keywordsai.co](https://keywordsai.co) |
+| Google Gemini | `GOOGLE_API_KEY` | [Google AI Studio](https://makersuite.google.com/app/apikey) |
+| Anthropic Claude | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
 
 ### Benchmark Defaults
 
-Configure in sidebar or modify in code:
+Configure in the sidebar or modify in code:
 
 | Metric | Default | Description |
 |--------|---------|-------------|
@@ -124,10 +143,10 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions on:
 
 ## 🔒 Security
 
-- Simple password authentication (production: use OAuth/SSO)
-- Secrets stored in environment variables
+- Secrets stored in environment variables (not hardcoded)
 - Data processed in-memory only (not persisted)
 - HTTPS recommended for all deployments
+- `.streamlit/secrets.toml` is gitignored
 
 For production deployments, consider:
 - Streamlit-Authenticator or Auth0 integration
@@ -135,15 +154,13 @@ For production deployments, consider:
 - VPC/firewall restrictions
 - GDPR compliance measures
 
-## 🛣️ Roadmap
+## 🛠️ Tech Stack
 
-- [ ] Multi-tenant database (PostgreSQL)
-- [ ] Real OAuth flows for integrations
-- [ ] Background data sync with Celery
-- [ ] ML-based churn prediction model
-- [ ] SHAP values for explainability
-- [ ] Email/Slack alerting
-- [ ] Role-based access control
+- **Frontend**: Streamlit
+- **Visualization**: Plotly
+- **Data Processing**: Pandas, NumPy
+- **AI Providers**: Keywords AI, Google Gemini, Anthropic Claude
+- **Containerization**: Docker
 
 ## 📄 License
 
@@ -159,8 +176,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## 📞 Support
 
 - GitHub Issues: Bug reports and feature requests
-- Documentation: [docs/](docs/)
 
 ---
 
-Built with ❤️ using Streamlit and Google Gemini AI
+Built with ❤️ using Streamlit and AI
